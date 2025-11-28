@@ -5,6 +5,28 @@ import sys
 from board import Board
 from game_logic import Game
 from file_manager import FileManager
+
+# board size limiter
+def get_max_board_size(win, cell_size=28, header_margin_rows=6, side_margin_cols=4):
+
+    try:
+        scr_w = win.winfo_screenwidth()
+        scr_h = win.winfo_screenheight()
+    except Exception:
+        scr_w, scr_h = 1366, 768
+
+    # Compute capacity
+    max_rows = max(5, scr_h // cell_size - header_margin_rows)
+    max_cols = max(5, scr_w // cell_size - side_margin_cols)
+
+    HARD_MAX_ROWS = 80
+    HARD_MAX_COLS = 160
+    max_rows = min(max_rows, HARD_MAX_ROWS)
+    max_cols = min(max_cols, HARD_MAX_COLS)
+
+    return int(max_rows), int(max_cols)
+    
+
 #Board paramters (default)
 DEFAULT_ROWS, DEFAULT_COLS, DEFAULT_MINES = 9, 9, 15
 #Difficulties presets
@@ -211,13 +233,43 @@ def main_menu(prefill_name=None):
         n = valid_name()
         if not n:
             return
+
+        # --- Validate numeric input ---
         if not (entry_rows.get().isdigit() and entry_cols.get().isdigit() and entry_mines.get().isdigit()):
             messagebox.showerror("Error", "Row/Column/Mine values must be numeric.")
             return
         r = int(entry_rows.get()); c = int(entry_cols.get()); m = int(entry_mines.get())
+
+        # basic logical validation
+        if r <= 0 or c <= 0 or m <= 0:
+            messagebox.showerror("Invalid input", "Rows, columns and mines must be positive integers.")
+            return
+
         if m >= r * c:
             messagebox.showerror("Error", "Too many mines for this board.")
             return
+
+        # --- Screen-based limits ---
+        max_rows, max_cols = get_max_board_size(win)
+        if r > max_rows or c > max_cols:
+            messagebox.showerror(
+                "Board too large for screen",
+                f"Requested board ({r}×{c}) is too large for your display.\n\n"
+                f"Max allowed on this device: {max_rows} rows × {max_cols} cols\n\n"
+                "Reduce rows/columns or try a smaller cell-size / larger screen."
+            )
+            return
+
+        # --- Optional warning for very large boards (user can still proceed) ---
+        WARN_THRESHOLD = 0.8
+        if (r / max_rows >= WARN_THRESHOLD) or (c / max_cols >= WARN_THRESHOLD):
+            proceed = messagebox.askyesno(
+                "Large board",
+                "This board will occupy most of your screen and may be slow on some machines.\nDo you want to continue?"
+            )
+            if not proceed:
+                return
+
         win.destroy()
         start_game(r, c, m, n, fm)
     #Default board start
