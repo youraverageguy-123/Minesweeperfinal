@@ -42,7 +42,7 @@ class FileManager:
         #Create a leaderboard window with two tabs: wins and losses, with each player name, time, difficulty, and clicks and clicking on a row shows detailed history of that player
         scs = self.load_scores()
         if not scs:
-            messagebox.showinfo("Leaderboard", "No scores yet — be the first loser."); return
+            messagebox.showinfo("Leaderboard", "No scores yet: Be ready to be the first loser."); return
         #Separate wins and losses per player
         lwn = {}; lls = {}; pls = set()
         for s in scs:
@@ -183,3 +183,4 @@ class FileManager:
                 os.remove(self.score_file); messagebox.showinfo("Done", "Leaderboard cleared.")
         else:
             messagebox.showinfo("Info", "Leaderboard already empty.")
+
